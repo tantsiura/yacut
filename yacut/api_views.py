@@ -26,17 +26,17 @@ def create_id():
             'Указано недопустимое имя для короткой ссылки')
     if URLMap.query.filter_by(short=data['custom_id']).first():
         raise InvalidAPIUsageError(f'Имя "{data["custom_id"]}" уже занято.')
-    URLMap = URLMap()
-    URLMap.from_dict(data)
-    db.session.add(URLMap)
+    url_map = URLMap()
+    url_map.from_dict(data)
+    db.session.add(url_map)
     db.session.commit()
-    return jsonify(URLMap.to_dict()), HTTPStatus.CREATED
+    return jsonify(url_map.to_dict()), HTTPStatus.CREATED
 
 
 @app.route('/api/id/<string:short_id>/')
 def get_url(short_id):
-    URLMap = URLMap.query.filter_by(short=short_id).first()
-    if not URLMap:
+    url_map = URLMap.query.filter_by(short=short_id).first()
+    if not url_map:
         raise InvalidAPIUsageError(
             'Указанный id не найден', HTTPStatus.NOT_FOUND)
-    return jsonify({'url': URLMap.original})
+    return jsonify({'url': url_map.original})
