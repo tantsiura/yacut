@@ -1,4 +1,4 @@
-import reimage
+import re
 from http import HTTPStatus
 from typing import Tuple
 

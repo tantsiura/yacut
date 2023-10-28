@@ -1,8 +1,0 @@
-<footer class="text-center fixed-bottom py-4">
-  <span class="text-secondary">
-    Ilya Petrukhin –
-    <a class="link-secondary text-decoration-none" href="https://github.com/tvules/yacut">
-      YaCut
-    </a>
-  </span>
-</footer>
