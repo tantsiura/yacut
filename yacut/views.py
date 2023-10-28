@@ -1,41 +1,27 @@
-from flask import Response, redirect, render_template, url_for
+from flask import flash, redirect, render_template, url_for
 
-from yacut import app
-from yacut.forms import URLMapForm
-from yacut.models import URLMap
-from yacut.utils import save
-
-
-@app.route('/', methods=('GET', 'POST'))
-def index() -> str:
-    form = URLMapForm()
-
-    if not form.validate_on_submit():
-        return render_template('index.html', form=form)
-
-    if not form.custom_id.data:
-        form.custom_id.data = URLMap.get_unique_short_id()
-
-    urlmap = URLMap(
-        original=form.original_link.data,
-        short=form.custom_id.data,
-    )
-    save(urlmap)
-
-    form.custom_id.data = None
-    return render_template(
-        'index.html',
-        form=form,
-        short_link=url_for(
-            'mapping_redirect',
-            short_id=urlmap.short,
-            _external=True,
-        ),
-    )
+from . import app, db
+from .forms import URL_mapForm
+from .models import URL_map
+from .utils import get_unique_short_id
 
 
-@app.route('/<string:short_id>', strict_slashes=False)
-def mapping_redirect(short_id: str) -> Response:
+@app.route('/', methods=['GET', 'POST'])
+def index_view():
+    form = URL_mapForm()
+    if form.validate_on_submit():
+        short = form.custom_id.data or get_unique_short_id()
+        url_map = URL_map(
+            original=form.original_link.data,
+            short=short
+        )
+        db.session.add(url_map)
+        db.session.commit()
+        flash(url_for('opinion_view', short=short, _external=True))
+    return render_template('main.html', form=form)
+
+
+@app.route('/<string:short>')
+def opinion_view(short):
     return redirect(
-        URLMap.query.filter_by(short=short_id).first_or_404().original,
-    )
+        URL_map.query.filter_by(short=short).first_or_404().original)
