@@ -3,10 +3,10 @@ from wtforms import StringField, SubmitField, URLField
 from wtforms.validators import (URL, DataRequired, Length, Optional, Regexp,
                                 ValidationError)
 
-from .models import URL_map
+from .models import URLMap
 
 
-class URL_mapForm(FlaskForm):
+class URLMapForm(FlaskForm):
     original_link = URLField(
         'Введите ссылку', validators=[
             DataRequired(message='Обязательное поле'),
@@ -20,5 +20,5 @@ class URL_mapForm(FlaskForm):
     submit = SubmitField('Создать')
 
     def validate_custom_id(self, field):
-        if field.data and URL_map.query.filter_by(short=field.data).first():
+        if field.data and URLMap.query.filter_by(short=field.data).first():
             raise ValidationError(f'Имя {field.data} уже занято!')
