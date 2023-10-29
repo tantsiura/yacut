@@ -2,20 +2,29 @@ from datetime import datetime
 
 from flask import url_for
 
-from settings import USER_LINK_LENGHT
 from yacut import db
 
 
-class URL_map(db.Model):
+class URLMap(db.Model):
+    API_FIELDS = {
+        'url': 'original',
+        'custom_id': 'short',
+    }
+
     id = db.Column(db.Integer, primary_key=True)
-    original = db.Column(db.String(), index=True, nullable=False)
-    short = db.Column(db.String(USER_LINK_LENGHT), index=True, unique=True,
-                      nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    original = db.Column(db.String(1024), nullable=False)
+    short = db.Column(db.String(16), unique=True)
+    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
 
     def to_dict(self):
         return dict(
             url=self.original,
-            short_link=url_for('redirect_view', short=self.short,
-                               _external=True)
+            short_link=url_for(
+                'redirect_view', custom_id=self.short, _external=True
+            )
         )
+
+    def from_dict(self, data):
+        for field in self.API_FIELDS:
+            if field in data:
+                setattr(self, self.API_FIELDS[field], data[field])
