@@ -8,7 +8,7 @@ from . import app
 from . import constants as const
 from . import utils
 from .error_handlers import APIException
-from .models import URLMap
+from .models import UrlMap
 from .validators import len_validation, symbols_validation
 
 
@@ -66,7 +66,7 @@ def get_mapper_url(short_id):
     Returns:
         tuple(str, int): Оригинальная ссылка, статус-код.
     """
-    url_map = URLMap.query.filter_by(short=short_id).first()
+    url_map = UrlMap.query.filter_by(short=short_id).first()
     if url_map is None:
         raise APIException(const.NOT_FOUND, HTTPStatus.NOT_FOUND)
 

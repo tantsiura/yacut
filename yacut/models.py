@@ -5,7 +5,7 @@ from datetime import datetime as dt
 from . import db
 
 
-class URLMap(db.Model):
+class UrlMap(db.Model):
     """Связывает ориганальный URL с коротким.
 
     Attrs:

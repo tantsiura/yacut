@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 
 from . import constants as const
 from . import db
-from .models import URLMap
+from .models import UrlMap
 
 
 def get_unique_short_id(symbols=const.ALLOWED_SYMBOLS, length=const.LEN_AUTO_SHORT):
@@ -24,7 +24,7 @@ def get_unique_short_id(symbols=const.ALLOWED_SYMBOLS, length=const.LEN_AUTO_SHO
         for i in range(length):
             result[i] = random.choice(symbols)
         result = ''.join(result)
-        if URLMap.query.filter_by(short=result).first():
+        if UrlMap.query.filter_by(short=result).first():
             continue
         return result
 
@@ -39,19 +39,19 @@ def short_url_exist(short_url):
     Returns:
         bool: Наличие либо отсутствие записи с указанными данными.
     """
-    return bool(URLMap.query.filter_by(short=short_url).first())
+    return bool(UrlMap.query.filter_by(short=short_url).first())
 
 
 def add_url_map(original, short):
     """Добавляет данные в БД.
 
     Args:
-        original (str): Данные для URLMap.original.
-        short (str):  Данные для URLMap.short.
+        original (str): Данные для UrlMap.original.
+        short (str):  Данные для UrlMap.short.
     Returns:
         boll: Удалось или нет добавить данные.
     """
-    url_map = URLMap(
+    url_map = UrlMap(
         original=original,
         short=short
     )

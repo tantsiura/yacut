@@ -7,7 +7,7 @@ from . import constants as const
 from . import validators
 
 
-class URLMapForm(FlaskForm):
+class UrlMapForm(FlaskForm):
     """Форма для `/index_view()`.
 
     Attrs:
