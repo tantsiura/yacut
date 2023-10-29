@@ -23,26 +23,26 @@ CUSTOM_ID_VALIDATORS = {
 }
 
 
-@app.route("/api/id/", methods=("POST",))
-@required_fields(("url",))
+@app.route('/api/id/', methods=('POST',))
+@required_fields(('url',))
 def create_short_url() -> Tuple[Response, int]:
     data = request.get_json()
 
-    custom_id = data.get("custom_id")
+    custom_id = data.get('custom_id')
     if custom_id is not None:
         for func, message in CUSTOM_ID_VALIDATORS.items():
             if func(custom_id):
                 raise APIRequestError(message.format(custom_id=custom_id))
     else:
-        data["custom_id"] = URLMap.get_unique_short_id()
+        data['custom_id'] = URLMap.get_unique_short_id()
 
-    urlmap = URLMap(original=data.get("url"), short=data.get("custom_id"))
+    urlmap = URLMap(original=data.get('url'), short=data.get('custom_id'))
     save(urlmap)
 
     response = {
-        "url": urlmap.original,
-        "short_link": url_for(
-            "mapping_redirect",
+        'url': urlmap.original,
+        'short_link': url_for(
+            'mapping_redirect',
             short_id=urlmap.short,
             _external=True,
         ),
@@ -50,9 +50,9 @@ def create_short_url() -> Tuple[Response, int]:
     return jsonify(response), HTTPStatus.CREATED
 
 
-@app.route("/api/id/<string:short_id>/")
+@app.route('/api/id/<string:short_id>/')
 def get_short_url(short_id: str) -> Tuple[Response, int]:
     urlmap = URLMap.query.filter_by(short=short_id).first()
     if not urlmap:
         raise APIRequestError(const.SHORT_ID_NOT_FOUND, HTTPStatus.NOT_FOUND)
-    return jsonify({"url": urlmap.original}), HTTPStatus.OK
+    return jsonify({'url': urlmap.original}), HTTPStatus.OK

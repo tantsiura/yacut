@@ -21,7 +21,7 @@ class URLMap(db.Model):
     @staticmethod
     def generate_short_id(length: int) -> str:
         symbols = string.ascii_letters + string.digits
-        return "".join((random.choice(symbols) for _ in range(length)))
+        return ''.join((random.choice(symbols) for _ in range(length)))
 
     @classmethod
     def is_free_short_id(cls, short_id: str) -> bool:
