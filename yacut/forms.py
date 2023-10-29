@@ -1,24 +1,21 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, URLField
-from wtforms.validators import (URL, DataRequired, Length, Optional, Regexp,
-                                ValidationError)
+from wtforms.validators import URL, DataRequired, Length, Optional, Regexp
 
-from .models import URLMap
+from settings import REGEX_PATTERN, USER_LINK_LENGHT
 
 
-class URLMapForm(FlaskForm):
+class LinkForm(FlaskForm):
     original_link = URLField(
-        'Введите ссылку', validators=[
-            DataRequired(message='Обязательное поле'),
-            Length(1, 256), URL(
-                require_tld=True, message=('Некорректный URL'))])
+        'Длинная ссылка',
+        validators=[DataRequired(message='Обязательное поле'), URL(message='Введите ссылку целиком')]
+    )
     custom_id = StringField(
-        'Ваш вариант короткой ссылки', validators=[
-            Length(1, 16), Optional(), Regexp(
-                r'^[A-Za-z0-9]+$',
-                message='Можно использовать только [A-Za-z0-9]')])
+        'Ваш вариант короткой ссылки',
+        validators=[Length(max=USER_LINK_LENGHT,
+                           message=f'Длина ссылки должна быть до {USER_LINK_LENGHT} символов'),
+                    Regexp(REGEX_PATTERN,
+                           message='Можно использовать только латинские буквы и арабские цифры'),
+                    Optional()]
+    )
     submit = SubmitField('Создать')
-
-    def validate_custom_id(self, field):
-        if field.data and URLMap.query.filter_by(short=field.data).first():
-            raise ValidationError(f'Имя {field.data} уже занято!')
