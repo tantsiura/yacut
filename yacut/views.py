@@ -1,3 +1,20 @@
+from flask import Response, redirect, render_template, url_for
+
+from yacut import app
+from yacut.forms import URLMapForm
+from yacut.models import URLMap
+from yacut.utils import save
+
+
+@app.route('/', methods=('GET', 'POST'))
+def index() -> str:
+    form = URLMapForm()
+
+    if not form.validate_on_submit():
+        return render_template('index.html', form=form)
+
+    if not form.custom_id.data:
+        form.custom_id.data = URLMap.get_unique_short_id()
 
     urlmap = URLMap(
         original=form.original_link.data,
