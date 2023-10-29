@@ -1,76 +1,52 @@
-"""Обработка запросов к api-интерфейсу.
-"""
 from http import HTTPStatus
+from re import match
 
-from flask import jsonify, request, url_for
+from flask import jsonify, request
 
-from . import app
-from . import constants as const
-from . import utils
-from .error_handlers import APIException
-from .models import URLMap
-from .validators import len_validation, symbols_validation
+from yacut import app, db
+from yacut.error_handlers import InvalidAPIUsage
+from yacut.models import URLMap
+from yacut.views import get_unique_short_id
 
 
-@app.route('/api/id/', methods=['POST'])
-def new_short_url():
-    """Обработка запроса на создание новой короткой ссылки.
+HTTP_OK = HTTPStatus.OK
+HTTP_NOT_FOUND = HTTPStatus.NOT_FOUND
+HTTP_CREATED = HTTPStatus.CREATED
 
-    Raises:
-        APIException: При получении некорректных данных.
-
-    Returns:
-        Responce: json.
-    """
-    data = request.get_json()
-
-    if not data:
-        raise APIException(const.NO_REQUEST_BODY)
-
-    original = data.get(const.API_REQUEST_FIELDS.original)
-
-    if original is None:
-        raise APIException(const.NO_REQUIRED_FIELD % const.API_REQUEST_FIELDS.original)
-
-    short = data.get(const.API_REQUEST_FIELDS.short)
-
-    if short:
-        len_validation(short, APIException(const.API_EXC_MESSAGE), max=const.MAX_LEN_SHORT)
-        symbols_validation(short, APIException(const.API_EXC_MESSAGE))
-        if utils.short_url_exist(short):
-            raise APIException(const.SHORT_URL_IS_BUSY % short)
-    else:
-        short = utils.get_unique_short_id()
-
-    utils.add_url_map(original, short)
-
-    response_dict = {
-        const.API_RESPONSE_FIELDS.short: url_for(
-            'mapper', short_url=short, _external=True
-        ),
-        const.API_RESPONSE_FIELDS.original: original
-    }
-    return jsonify(response_dict), HTTPStatus.CREATED
+URL_REGEX_PATTERN = r'^[a-z]+://[^\/\?:]+(:[0-9]+)?(\/.*?)?(\?.*)?$'
+CUSTOM_ID_REGEX_PATTERN = r'^[A-Za-z0-9]{1,16}$'
 
 
 @app.route('/api/id/<string:short_id>/', methods=['GET'])
-def get_mapper_url(short_id):
-    """получение оригинальной ссылки по короткому идентификатору.
-
-    Args:
-        short_id (str): Короткое имя ссылки.
-
-    Raises:
-        APIException: Ссылка не найдена.
-
-    Returns:
-        tuple(str, int): Оригинальная ссылка, статус-код.
-    """
+def get_original(short_id):
     url_map = URLMap.query.filter_by(short=short_id).first()
     if url_map is None:
-        raise APIException(const.NOT_FOUND, HTTPStatus.NOT_FOUND)
+        raise InvalidAPIUsage('Указанный id не найден', HTTP_NOT_FOUND)
+    return jsonify({'url': url_map.original}), HTTP_OK
 
-    response_dict = {
-        const.API_RESPONSE_FIELDS.original: url_map.original
-    }
-    return response_dict, HTTPStatus.OK
+
+@app.route('/api/id/', methods=['POST'])
+def create_id():
+    data = request.get_json()
+    validate_create_id(data)
+    url = URLMap()
+    url.from_dict(data)
+    db.session.add(url)
+    db.session.commit()
+    return jsonify(url.to_dict()), HTTP_CREATED
+
+
+def validate_create_id(data):
+    if data is None:
+        raise InvalidAPIUsage('Отсутствует тело запроса')
+    if 'url' not in data:
+        raise InvalidAPIUsage('"url" является обязательным полем!')
+    if not match(URL_REGEX_PATTERN, data['url']):
+        raise InvalidAPIUsage('Указан недопустимый URL')
+    if not data.get('custom_id'):
+        data['custom_id'] = get_unique_short_id()
+        return HTTP_CREATED
+    if not match(CUSTOM_ID_REGEX_PATTERN, data['custom_id']):
+        raise InvalidAPIUsage('Указано недопустимое имя для короткой ссылки')
+    if URLMap.query.filter_by(short=data['custom_id']).first():
+        raise InvalidAPIUsage('Предложенный вариант короткой ссылки уже существует.')

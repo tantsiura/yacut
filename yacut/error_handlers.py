@@ -1,50 +1,36 @@
-"""Обработка ошибок запросов.
-"""
 from http import HTTPStatus
 
 from flask import jsonify, render_template
 
-from . import app
+from yacut import app, db
 
 
-class APIException(Exception):
-    """Обработчик ошибок для эндпоинтов /api/* .
-    """
-    def __init__(self, message, status_code=HTTPStatus.BAD_REQUEST):
+class InvalidAPIUsage(Exception):
+    """Кастомный класс ошибок."""
+
+    status_code = HTTPStatus.BAD_REQUEST
+
+    def __init__(self, message, status_code=None):
         super().__init__()
         self.message = message
-        self.status_code = status_code
+        if status_code is not None:
+            self.status_code = status_code
 
-    def as_dict(self):
-        """Формирует сообщение об ошибке в формате словаря.
-
-        Returns:
-            dict: Сообщение об ошибке.
-        """
+    def to_dict(self):
         return dict(message=self.message)
 
 
-@app.errorhandler(APIException)
-def api_exception(error):
-    """Обрабатывает ошибки для api.
-
-    Args:
-        error (_type_): _description_
-
-    Returns:
-        tuple(dict, int): Сообщение об ошибке, HTTP-status
-    """
-    return jsonify(error.as_dict()), error.status_code
+@app.errorhandler(InvalidAPIUsage)
+def invalid_api_usage(error):
+    return jsonify(error.to_dict()), error.status_code
 
 
 @app.errorhandler(HTTPStatus.NOT_FOUND)
 def page_not_found(error):
-    """Обработчик ошибки 404.
+    return render_template('404.html'), HTTPStatus.NOT_FOUND
 
-    Args:
-        error (exceptions.NotFound): Ошибка.
 
-    Returns:
-        str: html-страница.
-    """
-    return render_template('error_pages/404.html'), HTTPStatus.NOT_FOUND
+@app.errorhandler(HTTPStatus.INTERNAL_SERVER_ERROR)
+def internal_server(error):
+    db.session.rollback()
+    return render_template('500.html'), HTTPStatus.INTERNAL_SERVER_ERROR
