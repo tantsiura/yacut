@@ -42,7 +42,7 @@ def mapper(short_url):
     Returns:
         Responce: Перенапрвление на оригинальную ссылку.
     """
-    original_url = models.UrlMap.query.filter_by(short=short_url).first()
+    original_url = models.URLMap.query.filter_by(short=short_url).first()
     if original_url is None:
         abort(HTTPStatus.NOT_FOUND)
     return redirect(original_url.original)
