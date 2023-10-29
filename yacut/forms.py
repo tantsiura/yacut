@@ -1,48 +1,45 @@
+"""Формы для web-интерфейса.
+"""
+import wtforms as fields
 from flask_wtf import FlaskForm
-from wtforms import SubmitField
-from wtforms.fields import Field, StringField
-from wtforms.validators import (
-    URL,
-    DataRequired,
-    Length,
-    Regexp,
-    ValidationError,
-)
 
-from yacut import constants as const
-from yacut.models import URLMap
+from . import constants as const
+from . import validators
 
 
-class URLMapForm(FlaskForm):
-    """The form of the URLMap model."""
+class UrlMapForm(FlaskForm):
+    """Форма для `/index_view()`.
 
-    original_link = StringField(
-        'Адрес URL',
-        description='https://example.com',
+    Attrs:
+        original_link: Оригинальная ссылка.
+        custom_id: Короткое имя.
+        submit: Кнопка подтверждения.
+    """
+    original_link = fields.URLField(
+        label='Введите длинную ссылку',
         validators=(
-            DataRequired(message='Обязательное поле.'),
-            URL(message='Некорректный адрес URL.'),
-        ),
+            validators.DataRequired(
+                message='Обязательное поле'
+            ),
+            validators.URL(
+                message='Некорректный URL'
+            )
+        )
     )
-    custom_id = StringField(
-        'Идентификатор ссылки',
-        description='Идентификатор ссылки',
+    custom_id = fields.StringField(
+        label='Введите название до %s символов' % const.MAX_LEN_SHORT,
         validators=(
-            Length(
-                max=16,
-                message='Длина поля не должна превышать 16 символов.',
+            validators.Optional(),
+            validators.Length(
+                max=const.MAX_LEN_SHORT,
+                message='Слишком длинное имя'
             ),
-            Regexp(
-                const.CUSTOM_ID_REGEX,
-                message=(
-                    'Идентификатор может состоять только '
-                    'из латинских букв и цифр.'
-                ),
-            ),
-        ),
+            validators.AllOf(
+                values=const.ALLOWED_SYMBOLS,
+                message='Разрешены только латиница и цифры'
+            )
+        )
     )
-    submit = SubmitField('Сократить')
-
-    def validate_custom_id(self, field: Field) -> None:
-        if field.data and not URLMap.is_free_short_id(field.data):
-            raise ValidationError(f'Имя {field.data} уже занято!')
+    submit = fields.SubmitField(
+        label='Сгенерировать'
+    )

@@ -1,58 +1,76 @@
-import re
+"""Обработка запросов к api-интерфейсу.
+"""
 from http import HTTPStatus
-from typing import Tuple
 
-from flask import Response, jsonify, request, url_for
+from flask import jsonify, request, url_for
 
-from yacut import app
-from yacut import constants as const
-from yacut.exceptions import APIRequestError
-from yacut.models import URLMap
-from yacut.utils import required_fields, save
-
-CUSTOM_ID_VALIDATORS = {
-    lambda value: (len(value) > const.CUSTOM_ID_LENGTH): (
-        const.INVALID_CUSTOM_ID
-    ),
-    lambda value: (re.match(const.CUSTOM_ID_REGEX, value) is None): (
-        const.INVALID_CUSTOM_ID
-    ),
-    lambda value: not URLMap.is_free_short_id(value): (
-        const.NOT_UNIQUE_CUSTOM_ID
-    ),
-}
+from . import app
+from . import constants as const
+from . import utils
+from .error_handlers import APIException
+from .models import UrlMap
+from .validators import len_validation, symbols_validation
 
 
-@app.route('/api/id/', methods=('POST',))
-@required_fields(('url',))
-def create_short_url() -> Tuple[Response, int]:
+@app.route('/api/id/', methods=['POST'])
+def new_short_url():
+    """Обработка запроса на создание новой короткой ссылки.
+
+    Raises:
+        APIException: При получении некорректных данных.
+
+    Returns:
+        Responce: json.
+    """
     data = request.get_json()
 
-    custom_id = data.get('custom_id')
-    if custom_id is not None:
-        for func, message in CUSTOM_ID_VALIDATORS.items():
-            if func(custom_id):
-                raise APIRequestError(message.format(custom_id=custom_id))
+    if not data:
+        raise APIException(const.NO_REQUEST_BODY)
+
+    original = data.get(const.API_REQUEST_FIELDS.original)
+
+    if original is None:
+        raise APIException(const.NO_REQUIRED_FIELD % const.API_REQUEST_FIELDS.original)
+
+    short = data.get(const.API_REQUEST_FIELDS.short)
+
+    if short:
+        len_validation(short, APIException(const.API_EXC_MESSAGE), max=const.MAX_LEN_SHORT)
+        symbols_validation(short, APIException(const.API_EXC_MESSAGE))
+        if utils.short_url_exist(short):
+            raise APIException(const.SHORT_URL_IS_BUSY % short)
     else:
-        data['custom_id'] = URLMap.get_unique_short_id()
+        short = utils.get_unique_short_id()
 
-    urlmap = URLMap(original=data.get('url'), short=data.get('custom_id'))
-    save(urlmap)
+    utils.add_url_map(original, short)
 
-    response = {
-        'url': urlmap.original,
-        'short_link': url_for(
-            'mapping_redirect',
-            short_id=urlmap.short,
-            _external=True,
+    response_dict = {
+        const.API_RESPONSE_FIELDS.short: url_for(
+            'mapper', short_url=short, _external=True
         ),
+        const.API_RESPONSE_FIELDS.original: original
     }
-    return jsonify(response), HTTPStatus.CREATED
+    return jsonify(response_dict), HTTPStatus.CREATED
 
 
-@app.route('/api/id/<string:short_id>/')
-def get_short_url(short_id: str) -> Tuple[Response, int]:
-    urlmap = URLMap.query.filter_by(short=short_id).first()
-    if not urlmap:
-        raise APIRequestError(const.SHORT_ID_NOT_FOUND, HTTPStatus.NOT_FOUND)
-    return jsonify({'url': urlmap.original}), HTTPStatus.OK
+@app.route('/api/id/<string:short_id>/', methods=['GET'])
+def get_mapper_url(short_id):
+    """получение оригинальной ссылки по короткому идентификатору.
+
+    Args:
+        short_id (str): Короткое имя ссылки.
+
+    Raises:
+        APIException: Ссылка не найдена.
+
+    Returns:
+        tuple(str, int): Оригинальная ссылка, статус-код.
+    """
+    url_map = UrlMap.query.filter_by(short=short_id).first()
+    if url_map is None:
+        raise APIException(const.NOT_FOUND, HTTPStatus.NOT_FOUND)
+
+    response_dict = {
+        const.API_RESPONSE_FIELDS.original: url_map.original
+    }
+    return response_dict, HTTPStatus.OK

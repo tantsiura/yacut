@@ -1,24 +1,50 @@
-from typing import Tuple
+"""Обработка ошибок запросов.
+"""
 from http import HTTPStatus
 
-from flask import Response, jsonify, render_template
-from werkzeug.exceptions import HTTPException
+from flask import jsonify, render_template
 
-from yacut import app, db
-from yacut.exceptions import APIError
+from . import app
 
 
-@app.errorhandler(APIError)
-def invalid_api_usage(error: APIError) -> Tuple[Response, int]:
-    return jsonify(error.to_dict()), error.status_code
+class APIException(Exception):
+    """Обработчик ошибок для эндпоинтов /api/* .
+    """
+    def __init__(self, message, status_code=HTTPStatus.BAD_REQUEST):
+        super().__init__()
+        self.message = message
+        self.status_code = status_code
+
+    def as_dict(self):
+        """Формирует сообщение об ошибке в формате словаря.
+
+        Returns:
+            dict: Сообщение об ошибке.
+        """
+        return dict(message=self.message)
 
 
-@app.errorhandler(404)
-def page_not_found(error: HTTPException) -> Tuple[str, int]:
-    return render_template('errors/404.html'), HTTPStatus.NOT_FOUND
+@app.errorhandler(APIException)
+def api_exception(error):
+    """Обрабатывает ошибки для api.
+
+    Args:
+        error (_type_): _description_
+
+    Returns:
+        tuple(dict, int): Сообщение об ошибке, HTTP-status
+    """
+    return jsonify(error.as_dict()), error.status_code
 
 
-@app.errorhandler(500)
-def internal_error(error: HTTPException) -> Tuple[str, int]:
-    db.session.rollback()
-    return render_template('errors/500.html'), HTTPStatus.INTERNAL_SERVER_ERROR
+@app.errorhandler(HTTPStatus.NOT_FOUND)
+def page_not_found(error):
+    """Обработчик ошибки 404.
+
+    Args:
+        error (exceptions.NotFound): Ошибка.
+
+    Returns:
+        str: html-страница.
+    """
+    return render_template('error_pages/404.html'), HTTPStatus.NOT_FOUND
