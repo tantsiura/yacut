@@ -1,45 +1,54 @@
-import string
 import random
+import string
 
 from flask import flash, redirect, render_template, url_for
 
-from yacut import app, db
-from yacut.forms import URLForm
-from yacut.models import URLMap
-from yacut.constants import SHORT_URL_LENGTH
+from . import app, db
+from .models import URLMap
+from .forms import URLMapForm
 
 
-def get_unique_short_id(length=SHORT_URL_LENGTH):
-    seq = string.ascii_letters + string.digits
-    existing_urls = URLMap.query.all()
-    existing_ids = {url.short for url in existing_urls}
+def is_short_id_unique(short_id):
+    if URLMap.query.filter_by(short=short_id).first():
+        return False
+    return True
+
+
+def get_unique_short_id():
+    chars = string.ascii_letters + string.digits
     while True:
-        new_short_id = ''.join(random.choices(seq, k=length))
-        if new_short_id not in existing_ids:
-            return new_short_id
+        short_id = ''.join(random.choice(chars) for _ in range(6))
+        if is_short_id_unique(short_id):
+            return short_id
 
 
 @app.route('/', methods=['GET', 'POST'])
-def add_url_view():
-    form = URLForm()
+def index_view():
+    form = URLMapForm()
     if form.validate_on_submit():
-        short = form.custom_id.data or get_unique_short_id()
-
-        if URLMap.query.filter_by(short=short).first():
-            flash('Предложенный вариант короткой ссылки уже существует.')
-            return redirect(url_for('add_url_view'))
-
-        url = URLMap(
+        if form.custom_id.data:
+            if not is_short_id_unique(form.custom_id.data):
+                flash(f'Имя {form.custom_id.data} уже занято!')
+                return render_template('index.html', form=form)
+            short_id = form.custom_id.data
+        else:
+            short_id = get_unique_short_id()
+        url_map = URLMap(
             original=form.original_link.data,
-            short=short
+            short=short_id
         )
-        db.session.add(url)
+        db.session.add(url_map)
         db.session.commit()
-        flash(url_for('url_view', short=short, _external=True))
-    return render_template('url.html', form=form)
+        flash('Ваша новая ссылка готова:')
+        return render_template(
+            'index.html',
+            form=form,
+            link=url_for('redirect_view', short_id=short_id, _external=True)
+        )
+    return render_template('index.html', form=form)
 
 
-@app.route('/<string:short>')
-def url_view(short):
-    return redirect(
-        URLMap.query.filter_by(short=short).first_or_404().original)
+@app.route('/<string:short_id>')
+def redirect_view(short_id):
+    url_map = URLMap.query.filter_by(short=short_id).first_or_404()
+    return redirect(url_map.original)

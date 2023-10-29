@@ -1,79 +1,74 @@
 {% extends "base.html" %}
-
-{% block title %}
-  YaCut — Сократить ссылку
-{% endblock title %}
-
+{% block title %}YaCut - укоротитель ссылок{% endblock title%} 
 {% block content %}
-  <main>
-    <section class="container my-5">
+<main>
+    <section class="container my-5 px-4">
+      <h1 class="text-center"><span style="color:red">Ya</span>Cut</h1>
+      <p class="text-center my-4">
+        Создайте короткую ссылку автоматически или предложите свой вариант
+      </p>
 
-      <h1 style="font-size: 3.5rem">
-        <a class="link-dark text-decoration-none" href="{{ url_for("index") }}"><span style="color: #FC3F1D">Ya</span>Cut<br>— Сократить ссылку</a>
-      </h1>
+      <div class="container">
+        <div class="row my-3">
+          <div class="col-sm">
+          </div>
+          <div class="col-sm">
+            <form method="POST" novalidate>
+              {{ form.csrf_token }}
+              <div>
+                <div>
+                  {{ form.original_link(class="form-control form-control-lg py-2 mb-3", placeholder=form.original_link.label.text) }}
+                  <p>
+                    {% if form.original_link.errors %}
+                      {% for error in form.original_link.errors %}
+                        <span style="color:red">{{ error }}</span>
+                      {% endfor %}
+                    {% endif %}
+                  </p>
+                </div>
+                <div>
+                  {{ form.custom_id(class="form-control form-control-lg py-2 mb-3", placeholder=form.custom_id.label.text) }}
+                    <p>
+                      {% if form.custom_id.errors %}
+                        {% for error in form.custom_id.errors %}
+                          <span style="color:red">{{ error }}</span>
+                        {% endfor %}
+                      {% endif %}
+                    </p>
+                </div>
+                {{ form.submit(class="btn btn-primary") }}
+              </div>
+            </form>
+          </div>
+          <div class="col-sm">
+          </div>
+        </div>
+      </div>
 
-      <div class="row justify-content-center pt-5 mt-5">
-        <div class="col-md-10 col-xxl-9">
-
-          <form method="post" novalidate>
-            {{ form.csrf_token }}
-
-            <div class="row gx-2">
-
-              <div class="col">
-                <div class="input-group input-group-lg {% if form.original_link.errors %}has-validation {% endif %}mb-3">
-                  <span class="input-group-text text-muted"><i class="bi bi-link"></i></span>
-                  {{ form.original_link(class="form-control" if not form.original_link.errors else "form-control is-invalid", placeholder=form.original_link.description, autocomplete="off") }}
-                  {% for error in form.original_link.errors %}
-                    <span class="invalid-feedback">{{ error }}</span>
+      <div class="container">
+        <div class="row ">
+          <div class="col-sm">
+          </div>
+          <div class="col-sm">
+            <p class="text-center">
+              {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                  {% for message in messages %}
+                    <h5 class="text-center">{{ message }}
+                      {% if link %}
+                        <a href="{{ link }}">{{ link }}</a>
+                      {% endif %}
+                    </h5>
                   {% endfor %}
-                </div>
-              </div>
-
-              <div class="col-auto">
-                <button class="btn btn-outline-secondary btn-lg" type="button" data-bs-toggle="collapse" data-bs-target="#short_id">
-                  <i class="bi bi-sliders"></i>
-                </button>
-              </div>
-
-              <div class="col-12 order-lg-last">
-                <div class="collapse {% if form.custom_id.errors or form.custom_id.data %}show{% endif %}" id="short_id">
-                  <div class="input-group input-group-lg {% if form.custom_id.errors %}has-validation {% endif %}mb-3">
-                    <span class="input-group-text text-muted">{{ url_for("index", _external=True) }}</span>
-                    {{ form.custom_id(class="form-control" if not form.custom_id.errors else "form-control is-invalid", placeholder=form.custom_id.description, autocomplete="off") }}
-                    {% for error in form.custom_id.errors %}
-                      <span class="invalid-feedback">{{ error }}</span>
-                    {% endfor %}
-                  </div>
-                </div>
-              </div>
-
-              <div class="col-12 col-lg-auto">
-                {{ form.submit(class="btn btn-dark btn-lg w-100 px-lg-4 px-xl-5") }}
-              </div>
-
-            </div>
-          </form>
-
-          {% if short_link %}
-            <div class="row justify-content-center mt-5 mt-lg-4">
-              <div class="col-lg-auto">
-
-                <div class="card border-0 bg-light rounded-4 text-center">
-                  <div class="card-body">
-                    <h2 class="mb-0">
-                      <a href="{{ short_link }}" class="link-secondary text-decoration-none">{{ short_link }}</a>
-                    </h2>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-          {% endif %}
-
+                {% endif %}
+              {% endwith %}
+            </p>
+          </div>
+          <div class="col-sm">
+          </div>
         </div>
       </div>
 
     </section>
-  </main>
+</main>
 {% endblock content %}
