@@ -33,6 +33,9 @@ paths:
                 Отсутствует обязательное поле:
                   value:
                     message: '"url" является обязательным полем!'
+                Предложенное сокращение уже существует:
+                  value:
+                    message: "Предложенный вариант короткой ссылки уже существует."
           description: Not found
       summary: Create Id
   /api/id/{short_id}/:

@@ -1,20 +1,18 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, URLField
-from wtforms.validators import DataRequired, Length, Optional, URL, Regexp
+from wtforms.validators import DataRequired, Length, Optional, Regexp
+
+from .constants import AVAILABLE_CHARS_REGEX_PATTERN, MAX_SHORT_LINK_LENGTH
 
 
-class URLMapForm(FlaskForm):
-    original_link = URLField(
-        'Длинная ссылка',
-        validators=[DataRequired(message='Обязательное поле'),
-                    URL(message='Ссылка не валидна')]
-    )
+class CutForm(FlaskForm):
+    original_link = URLField("Ссылка", validators=[DataRequired(), Length(max=2048)])
     custom_id = StringField(
-        'Ваш вариант короткой ссылки',
+        "Короткая ссылка",
         validators=[
-            Length(1, 16),
             Optional(),
-            Regexp(r'^[a-zA-Z0-9]+$',
-                   message='Используйте буквы латинского алфавита и цифры')]
+            Length(max=MAX_SHORT_LINK_LENGTH),
+            Regexp(AVAILABLE_CHARS_REGEX_PATTERN),
+        ],
     )
-    submit = SubmitField('Создать')
+    submit = SubmitField("Обрезать")
