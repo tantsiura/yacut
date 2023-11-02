@@ -39,8 +39,8 @@ def cut_link():
              "redirect_to_original",
              short_url=short_id,
              _external=True),
-        }),
-        HTTPStatus.CREATED,
+        }
+    ), HTTPStatus.CREATED,
     )
 
 
