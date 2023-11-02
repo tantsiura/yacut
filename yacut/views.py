@@ -17,7 +17,7 @@ def index_view():
             custom_id = get_unique_short_id()
         elif URLMap.query.filter_by(short=custom_id).first():
             flash(
-                "Такая ссылка уже существует."
+                "Предложенный вариант короткой ссылки уже существует."
             )
             return render_template("index.html", form=form)
         if not urlparse(form.original_link.data).scheme:
