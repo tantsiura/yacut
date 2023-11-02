@@ -33,15 +33,13 @@ def cut_link():
     else:
         link.short = short_id
     db.session.commit()
-    return (
-        jsonify(
-            {
-                "url": url,
-                "short_link": url_for(
-                    "redirect_to_original", short_url=short_id, _external=True
-                ),
-            }
-        ),
+    return (jsonify(
+        {"url": url,
+         "short_link": url_for(
+             "redirect_to_original",
+             short_url=short_id,
+             _external=True),
+        }),
         HTTPStatus.CREATED,
     )
 

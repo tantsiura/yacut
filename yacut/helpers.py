@@ -2,12 +2,9 @@ import random
 import re
 
 from .constants import (
-    AVAILABLE_CHARS,
-    AVAILABLE_CHARS_REGEX_PATTERN,
+    AVAILABLE_CHARS, AVAILABLE_CHARS_REGEX_PATTERN, MAX_SHORT_LINK_LENGTH,
     MAX_SHORT_LINK_LENGTH_AUTOGEN,
-    MAX_SHORT_LINK_LENGTH,
 )
-
 from .models import URLMap
 
 
@@ -21,8 +18,7 @@ def get_unique_short_id():
 
 
 def validate_short_link(link):
-    if len(link) > MAX_SHORT_LINK_LENGTH or not re.match(
-        AVAILABLE_CHARS_REGEX_PATTERN, link
-    ):
-        return False
-    return True
+    return not (
+        len(link) > MAX_SHORT_LINK_LENGTH
+        or not re.match(AVAILABLE_CHARS_REGEX_PATTERN, link)
+    )
