@@ -19,8 +19,7 @@ def cut_link():
     if "custom_id" in data and data["custom_id"]:
         if not validate_short_link(data["custom_id"]):
             raise InvalidAPIUsage(
-                f"""Указано недопустимое имя для короткой ссылки
-                """
+                "Указано недопустимое имя для короткой ссылки"
             )
         short_id = data["custom_id"]
         if URLMap.query.filter_by(short=short_id).first():

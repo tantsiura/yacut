@@ -8,8 +8,8 @@ class URLMap(db.Model):
     short = db.Column(db.String(16), unique=True, nullable=False)
     original = db.Column(db.String(2048), unique=True, nullable=False)
     timestamp = db.Column(
-        db.DateTime, 
-        nullable=False, 
+        db.DateTime,
+        nullable=False,
         default=datetime.utcnow
     )
 
