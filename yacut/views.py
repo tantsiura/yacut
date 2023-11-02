@@ -16,10 +16,9 @@ def index_view():
         if not custom_id:
             custom_id = get_unique_short_id()
         elif URLMap.query.filter_by(short=custom_id).first():
-            flash(
-                f"""
-                Предложенный вариант короткой ссылки уже существует.
-                """
+            flash(f"""
+                  Предложенный вариант короткой ссылки уже существует.
+                  """
             )
             return render_template("index.html", form=form)
         if not urlparse(form.original_link.data).scheme:
@@ -39,7 +38,7 @@ def index_view():
             db.session.add(link)
         db.session.commit()
         return render_template(
-            "index.html", 
+            "index.html",
             form=form, short_link=link
         )
     return render_template("index.html", form=form)

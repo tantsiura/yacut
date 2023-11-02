@@ -2,8 +2,8 @@ import random
 import re
 
 from .constants import (
-    AVAILABLE_CHARS, 
-    AVAILABLE_CHARS_REGEX_PATTERN, 
+    AVAILABLE_CHARS,
+    AVAILABLE_CHARS_REGEX_PATTERN,
     MAX_SHORT_LINK_LENGTH,
     MAX_SHORT_LINK_LENGTH_AUTOGEN,
 )
@@ -14,7 +14,7 @@ def get_unique_short_id():
     while True:
         short_id = "".join(
             random.choices(
-                AVAILABLE_CHARS, 
+                AVAILABLE_CHARS,
                 k=MAX_SHORT_LINK_LENGTH_AUTOGEN
             )
         )
